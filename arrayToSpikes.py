@@ -64,7 +64,7 @@ def readfile(filename,eeg_inputs):
   filename        A file name of a data text file
   eeg_inputs      An array for holding that data from the eeg txt file is stored into as parsing progresses
   Output:
-  eeg_inputs      An array of data from the eeg txt file
+  eeg_inputs      An array of data from the eeg txt file <what?>
   Function:
   Takes the file and reads the events and addes them to the list.
   When at the end returns the eeg_events list populated with the data
@@ -93,14 +93,101 @@ def toSpikes(arrayIn):
   print("toSpikes()")
   outPutSpikes = []
   subOutPutSpikes = []
-  max = 600
+  max = 8000
   # take the cross product to convert to the rate rate code of 200
-  for i in range(len(arrayIn)): 
-    for j in range (0,14):#(len(arrayIn[i])-1):
-      spikeRate = ( ( float( arrayIn[i][j+1]) / max) * 200 )#<todo> adjust for the + ~4000
-      print(spikeRate)
-      #<todo> think about converting the gyros - seems like bad idea as you want to have it be controlled by thought alone 
-      subOutPutSpikes.append(spikeRate)
+  for i in range(len(arrayIn)):   
+    '''The magic numbers here are some what guesses.
+    they come from the data so they could be tweeked more.
+    I just only have a few days to look at this atm.
+    What they are is values that should be max number that the channel should be at. 
+    if i can i will find the preprocessing program but not atm
+    '''
+    #<todo> label chnnels
+    spikeRate = ( ( float( arrayIn[i][1]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][2]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][3]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+          
+    spikeRate = ( ( float( arrayIn[i][4]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][5]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+          
+    spikeRate = ( ( float( arrayIn[i][6]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][7]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+            
+    spikeRate = ( ( float( arrayIn[i][8]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][9]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+ 
+    spikeRate = ( ( float( arrayIn[i][10]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+      
+    spikeRate = ( ( float( arrayIn[i][11]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][12]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][13]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+    spikeRate = ( ( float( arrayIn[i][14]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
+      
     outPutSpikes.append(subOutPutSpikes)
     subOutPutSpikes = []
   
