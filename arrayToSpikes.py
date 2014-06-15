@@ -5,10 +5,17 @@ import datetime
 from datetime import date, datetime, timedelta
 import sys
 import re
+from random import randint
 #from event import *
 
 # Example usage string for bash:
 # python arrayToSpike.py --file="fakeData1.txt"
+
+TIMESTEP = 0.0078125
+HALFTIMESTEP = 0.00390625
+THIRDTIMESTEP = 0.0026041
+MAXFIRERATE = 200
+MAXNUMBROFSPIKESINTIMESTEP = 1.5625 # MAXFIRERATE * TIMESTEP
 
 def main():
     """
@@ -33,11 +40,12 @@ def main():
 
     eeg_inputs = []
     spikeRates = []
+    
     names_files = []
     names_files = re.split(r",",options.filename)
 
     for i in range(len(names_files)):
-      print(i)
+      #print(i)
       readfile(names_files[i],eeg_inputs)
     
     print("")
@@ -45,12 +53,111 @@ def main():
     print("")
     print("")
     
-    printevents(eeg_inputs)
+    #printevents(eeg_inputs)
     
-    spikeRates = toSpikes(eeg_inputs)
+    spikeRatesByTimeStep= toSpikes(eeg_inputs)
+    spikeRates = organizeToChannel(spikeRatesByTimeStep)
     
-    print("Spike Rates")
+    
+    #print("Spike Rates")
     printevents(spikeRates)
+    
+    spikeProbabilities = []
+    spikeProbabilities = findFireRateProbability(spikeRates)
+    
+    spikeTrains = []
+    spikeTrains = buildSpikeTrain(spikeProbabilities)
+    
+    #print ("spikeTrains , ")
+    #print spikeTrains
+    
+    #write to a file so that its deterministic rather then random
+    writeToTextFile(spikeTrains)
+
+def organizeToChannel(spikeRatesByTimeStep):
+	#print "starts in 19 high x 14 wide"
+	#print spikeRatesByTimeStep[0]
+	spikeRatesByChannelVertically = []
+	for h in range(0,14):
+		spikeRatesByChannelVertically.append([])
+	#print spikeRatesByChannelVertically
+	for i in range(len(spikeRatesByTimeStep)):
+		for j in range(len(spikeRatesByChannelVertically)):
+			spikeRatesByChannelVertically[j].append(spikeRatesByTimeStep[i][j])
+		
+	#print "ends 14 high x 19 wide"
+	#print spikeRatesByChannelVertically[0]
+	return spikeRatesByChannelVertically
+
+def writeToTextFile(input_array):
+	print "writeToTextFile(input_array)"
+	outputFile = open('SpikeTrains.txt', 'w')
+	
+	for i in range(len(input_array)):
+		for j in range(len(input_array[i])):
+			#write a line, with tab delimiting
+			#outString = '%5f\t' % input_array[i][j]
+			outputFile.write(str(input_array[i][j]))
+			outputFile.write('\t')
+		outputFile.write('\n')
+	outputFile.close()
+
+def findFireRateProbability(spikeRate_array):
+	print "findFireRateProbability(spikeRate_array)"
+	spikeProbabilities = []
+	subProbList = []
+	
+	#print len(spikeRate_array)
+	#print (type(spikeRate_array[1][1]))
+	#print type(TIMESTEP)
+	
+	
+	for i in range(len(spikeRate_array)):
+		for j in range(len(spikeRate_array[i])):
+			subProbList.append(spikeRate_array[i][j] * TIMESTEP)
+			#print subProbList
+		spikeProbabilities.append(subProbList)
+		subProbList = []
+	
+	return spikeProbabilities
+
+
+def buildSpikeTrain(spikeProbabilities):
+	print "buildSpikeTrain(spikeProbabilities)"
+	time  = 0
+	spikeTrains = []
+	singleChannelSpikeTrain = []
+	for i in range(len(spikeProbabilities)):
+		for j in range(len(spikeProbabilities[i])):
+			if spikeProbabilities[i][j] > 1:
+				#print "fire"
+				time += THIRDTIMESTEP
+				singleChannelSpikeTrain.append(time)
+				#print time
+				time += THIRDTIMESTEP
+				spikeProbabilities[i][j]-= 1
+				if (randint(0,100) * 0.01) < spikeProbabilities[i][j]:
+					#print rands[i]," less than " , probs[i]
+					#print "fire"
+					singleChannelSpikeTrain.append(time)
+					#print time
+				time += THIRDTIMESTEP
+			elif (randint(0,100) * 0.01) < spikeProbabilities[i][j]:
+				#print rands[i]," less than " , probs[i]
+				#print "fire"
+				time += HALFTIMESTEP
+				singleChannelSpikeTrain.append(time)
+				#print time
+				time += HALFTIMESTEP
+			else:
+				time += TIMESTEP
+			#print time
+			#print singleChannelSpikeTrain
+		spikeTrains.append(singleChannelSpikeTrain)
+		singleChannelSpikeTrain=[]
+		time = 0
+		
+	return spikeTrains
 
 def printevents(input_array):
     for i in range(len(input_array)):
@@ -85,8 +192,7 @@ def readfile(filename,eeg_inputs):
       CurrentTimeList = []        
   index += 1
 
-  print (eeg_inputs)
-  #printevents(eeg_inputs)
+  #print (eeg_inputs)
   return eeg_inputs
 
 def toSpikes(arrayIn):
@@ -103,94 +209,95 @@ def toSpikes(arrayIn):
     if i can i will find the preprocessing program but not atm
     '''
     #<todo> label chnnels
+    spikeRate = ( ( float( arrayIn[i][0]) / max) * 200 )
+    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
+      spikeRate = 200
+    #print(spikeRate)
+    subOutPutSpikes.append(spikeRate)
+    
     spikeRate = ( ( float( arrayIn[i][1]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
     
     spikeRate = ( ( float( arrayIn[i][2]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-    
+          
     spikeRate = ( ( float( arrayIn[i][3]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-          
+    
     spikeRate = ( ( float( arrayIn[i][4]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-    
+          
     spikeRate = ( ( float( arrayIn[i][5]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-          
+    
     spikeRate = ( ( float( arrayIn[i][6]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-    
+            
     spikeRate = ( ( float( arrayIn[i][7]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-            
+    
     spikeRate = ( ( float( arrayIn[i][8]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-    
+ 
     spikeRate = ( ( float( arrayIn[i][9]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
- 
+      
     spikeRate = ( ( float( arrayIn[i][10]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
-      
+    
     spikeRate = ( ( float( arrayIn[i][11]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
     
     spikeRate = ( ( float( arrayIn[i][12]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
     
     spikeRate = ( ( float( arrayIn[i][13]) / max) * 200 )
     if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
       spikeRate = 200
-    print(spikeRate)
-    subOutPutSpikes.append(spikeRate)
-    
-    spikeRate = ( ( float( arrayIn[i][14]) / max) * 200 )
-    if ( spikeRate > 200 ): # if its over the largest threshold bring it into range
-      spikeRate = 200
-    print(spikeRate)
+    #print(spikeRate)
     subOutPutSpikes.append(spikeRate)
     
       
     outPutSpikes.append(subOutPutSpikes)
     subOutPutSpikes = []
   
+  #print outPutSpikes
   print("end toSpikes()")
   return outPutSpikes
 
